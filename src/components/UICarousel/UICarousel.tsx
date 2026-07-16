@@ -86,18 +86,14 @@ function UICarouselInner<T>(
 ): ReactNode {
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
   const [paused, setPaused] = useState(false);
 
   const total = items.length;
   // шаг прокрутки = ширина слайда + зазор; левый край слайда i = i * step
   const step = itemWidth + gap;
 
-  // Свежие значения для next/prev/autoplay без ожидания ре-рендера.
+  // Свежее значение для next/prev/autoplay без ожидания ре-рендера.
   const activeIndexRef = useRef(0);
-  const atStartRef = useRef(true);
-  const atEndRef = useRef(false);
   // Флаги «идёт наша анимация» / «пользователь тащит» — чтобы idle-доводка не конфликтовала.
   const animRef = useRef<number | null>(null);
   const draggingRef = useRef(false);
@@ -140,98 +136,90 @@ function UICarouselInner<T>(
     [cancelAnim, scroller],
   );
 
-  // Пересчёт активного индекса и краёв по реальной позиции — источник правды.
-  // На краях кламп по позиции: у края scrollLeft упирается в max раньше, чем индекс дойдёт
-  // до total-1 (видно несколько слайдов) — поэтому последний/первый форсим явно.
-  const syncFromScroll = useCallback(
-    (el: HTMLElement) => {
-      const max = maxScrollOf(el);
-      const start = el.scrollLeft <= EDGE_EPS;
-      const end = el.scrollLeft >= max - EDGE_EPS;
-      atStartRef.current = start;
-      atEndRef.current = end;
-      setAtStart(start);
-      setAtEnd(end);
-      let idx: number;
-      if (end) idx = total - 1;
-      else if (start) idx = 0;
-      else idx = clamp(Math.round(el.scrollLeft / step), 0, total - 1);
-      activeIndexRef.current = idx;
-      setActiveIndex(idx);
-    },
-    [step, total],
-  );
-
-  // Доводка до ближайшего слайда (перетянул >50% → round уводит к следующему).
+  // Доводка до ближайшего слайда после ПОЛЬЗОВАТЕЛЬСКОГО скролла (drag/wheel/тач):
+  // round по позиции (>50% → следующий), на краю — последний/первый. Здесь же
+  // обновляем active-индекс — это единственное место (помимо программных next/prev/
+  // goTo), где он меняется из реальной позиции скролла.
   const settleToNearest = useCallback(() => {
     if (!scroller) return;
-    const idx = clamp(Math.round(scroller.scrollLeft / step), 0, total - 1);
-    const target = Math.min(idx * step, maxScrollOf(scroller));
+    const max = maxScrollOf(scroller);
+    const end = scroller.scrollLeft >= max - EDGE_EPS;
+    const byRound = clamp(Math.round(scroller.scrollLeft / step), 0, total - 1);
+    const idx = end ? total - 1 : byRound;
+    activeIndexRef.current = idx;
+    setActiveIndex(idx);
+    const target = Math.min(byRound * step, max);
     if (Math.abs(target - scroller.scrollLeft) > 1) animateTo(target);
   }, [animateTo, scroller, step, total]);
 
-  // Программный переход к индексу (кламп по краю → последний слайд достижим и кликается).
+  // Программный переход к индексу: ставит active-индекс сразу (точка двигается в
+  // тот же кадр, не дожидаясь конца анимации) и ведёт ленту к min(i*step, max).
   const goTo = useCallback(
     (index: number) => {
       if (total === 0 || !scroller) return;
       const target = clamp(index, 0, total - 1);
+      activeIndexRef.current = target;
+      setActiveIndex(target);
       animateTo(Math.min(target * step, maxScrollOf(scroller)));
     },
     [animateTo, scroller, step, total],
   );
 
+  // next/prev — индексная модель через goTo. У конца, когда слайдов в viewport > 1,
+  // последние 1–2 индекса могут делить одну позицию max (прижим к правому краю) —
+  // тогда один клик двигает только точку, лента уже в конце. Зато точка ВСЕГДА идёт
+  // последовательно 0..N без пропусков и без самопроизвольных скачков.
   const next = useCallback(() => {
-    if (atEndRef.current || activeIndexRef.current >= total - 1) {
+    if (!scroller || total === 0) return;
+    if (activeIndexRef.current >= total - 1) {
       if (loop) goTo(0);
       return;
     }
     goTo(activeIndexRef.current + 1);
-  }, [goTo, loop, total]);
+  }, [goTo, loop, scroller, total]);
 
   const prev = useCallback(() => {
-    if (atStartRef.current || activeIndexRef.current <= 0) {
+    if (!scroller || total === 0) return;
+    if (activeIndexRef.current <= 0) {
       if (loop) goTo(total - 1);
       return;
     }
     goTo(activeIndexRef.current - 1);
-  }, [goTo, loop, total]);
+  }, [goTo, loop, scroller, total]);
 
   // imperative API — behavior игнорируем (всегда своя плавная анимация)
   useImperativeHandle(
     ref,
-    (): UICarouselHandle => ({ scrollToIndex: (index) => { goTo(index); }, next, prev }),
+    (): UICarouselHandle => ({
+      scrollToIndex: (index) => {
+        goTo(index);
+      },
+      next,
+      prev,
+    }),
     [goTo, next, prev],
   );
 
-  // Подписка на scroll + первичный замер. MutationObserver нужен, т.к. Virtuoso задаёт полную
-  // ширину ленты inline-стилем на спейсере (ResizeObserver ловит только размер самого scroller,
-  // не рост scrollWidth) — без него atEnd залипал бы с первого кадра.
+  // Скролл слушаем ради одного — поймать остановку ПОЛЬЗОВАТЕЛЬСКОГО скролла
+  // (drag/wheel/тач) и довести ленту до ближайшего слайда. Во время нашей анимации
+  // и драга доводку не планируем. Краевые флаги и active-индекс здесь не трогаем —
+  // стрелки блокируются по active-индексу, а индекс ставят goTo/settle.
   useEffect(() => {
     if (!scroller) return;
-    syncFromScroll(scroller);
-    let raf = 0;
     const onScroll = (): void => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => { syncFromScroll(scroller); });
-      // idle-доводка только для пользовательского скролла (не во время нашей анимации/драга)
       if (animRef.current === null && !draggingRef.current) {
         if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
-        settleTimer.current = window.setTimeout(() => { settleToNearest(); }, 140);
+        settleTimer.current = window.setTimeout(() => {
+          settleToNearest();
+        }, 140);
       }
     };
     scroller.addEventListener('scroll', onScroll, { passive: true });
-    const ro = new ResizeObserver(() => { syncFromScroll(scroller); });
-    ro.observe(scroller);
-    const mo = new MutationObserver(() => { syncFromScroll(scroller); });
-    mo.observe(scroller, { attributes: true, attributeFilter: ['style'], subtree: true, childList: true });
     return () => {
-      cancelAnimationFrame(raf);
       if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
       scroller.removeEventListener('scroll', onScroll);
-      ro.disconnect();
-      mo.disconnect();
     };
-  }, [scroller, settleToNearest, syncFromScroll]);
+  }, [scroller, settleToNearest]);
 
   // Колесо/трекпад: листаем ленту ТОЛЬКО горизонтальным жестом (deltaX доминирует).
   // Вертикальное колесо мыши (deltaY) не перехватываем — иначе мышь «угоняет» вертикальный
@@ -252,7 +240,9 @@ function UICarouselInner<T>(
       scroller.scrollLeft += delta;
     };
     scroller.addEventListener('wheel', onWheel, { passive: false });
-    return () => { scroller.removeEventListener('wheel', onWheel); };
+    return () => {
+      scroller.removeEventListener('wheel', onWheel);
+    };
   }, [cancelAnim, scroller]);
 
   // Drag-to-scroll мышью (touch/трекпад уже покрыты нативным скроллом + wheel).
@@ -287,7 +277,11 @@ function UICarouselInner<T>(
     };
     // клик по кнопке/ссылке внутри слайда после реального drag — гасим
     const onClickCapture = (e: MouseEvent): void => {
-      if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+      if (moved) {
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }
     };
 
     scroller.addEventListener('pointerdown', onPointerDown);
@@ -305,14 +299,22 @@ function UICarouselInner<T>(
   // autoplay — таймер + пауза при hover / vis-hidden
   useEffect(() => {
     if (!autoplayMs || autoplayMs <= 0 || paused || total < 2) return;
-    const id = window.setInterval(() => { next(); }, autoplayMs);
-    return () => { window.clearInterval(id); };
+    const id = window.setInterval(() => {
+      next();
+    }, autoplayMs);
+    return () => {
+      window.clearInterval(id);
+    };
   }, [autoplayMs, next, paused, total]);
 
   useEffect(() => {
-    const onVis = (): void => { setPaused(document.hidden); };
+    const onVis = (): void => {
+      setPaused(document.hidden);
+    };
     document.addEventListener('visibilitychange', onVis);
-    return () => { document.removeEventListener('visibilitychange', onVis); };
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   const handleScrollerRef = useCallback((el: HTMLElement | Window | null) => {
@@ -342,8 +344,11 @@ function UICarouselInner<T>(
   const resolvedStyle = useMemo<CSSProperties>(() => ({ ...style }), [style]);
   const heightValue = typeof height === 'number' ? `${String(height)}px` : height;
 
-  const canPrev = loop || !atStart;
-  const canNext = loop || !atEnd;
+  // Доступность стрелок — по active-индексу, не по позиционному atEnd: у тесной
+  // карусели лента упирается в max (atEnd) ещё на total-2, и блокировка по atEnd
+  // не давала дойти до последней точки. atStart/atEnd остаются для fade-масок.
+  const canPrev = loop || activeIndex > 0;
+  const canNext = loop || activeIndex < total - 1;
 
   if (total === 0) {
     return (
@@ -378,13 +383,27 @@ function UICarouselInner<T>(
       aria-label={ariaLabel}
       className={cn('relative w-full', className)}
       style={resolvedStyle}
-      onMouseEnter={() => { setPaused(true); }}
-      onMouseLeave={() => { setPaused(false); }}
-      onFocus={() => { setPaused(true); }}
-      onBlur={() => { setPaused(false); }}
+      onMouseEnter={() => {
+        setPaused(true);
+      }}
+      onMouseLeave={() => {
+        setPaused(false);
+      }}
+      onFocus={() => {
+        setPaused(true);
+      }}
+      onBlur={() => {
+        setPaused(false);
+      }}
       onKeyDown={(e) => {
-        if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
-        if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          prev();
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          next();
+        }
       }}
       tabIndex={0}
     >
@@ -442,10 +461,14 @@ function UICarouselInner<T>(
               role="tab"
               aria-selected={i === activeIndex}
               aria-label={`Слайд ${String(i + 1)}`}
-              onClick={() => { goTo(i); }}
+              onClick={() => {
+                goTo(i);
+              }}
               className={cn(
                 'h-1.5 rounded-full transition-all',
-                i === activeIndex ? 'w-6 bg-primary' : 'w-1.5 bg-muted hover:bg-muted-foreground/40',
+                i === activeIndex
+                  ? 'w-6 bg-primary'
+                  : 'w-1.5 bg-muted hover:bg-muted-foreground/40',
               )}
             />
           ))}

@@ -82,16 +82,46 @@ const UIDropdownMenuRoot = forwardRef<HTMLDivElement, IUIDropdownMenuProps>(
     const ctx = useMemo(() => ({ close, activeIndex, setActiveIndex, itemsRef }), [close, activeIndex]);
 
     useEffect(() => {
-      if (!open || !anchorRef.current || !contentRef.current) return;
-      const result = computePosition(
-        anchorRef.current.getBoundingClientRect(),
-        { width: contentRef.current.offsetWidth, height: contentRef.current.offsetHeight },
-        placement,
-        { gutter },
-      );
-      contentRef.current.style.left = `${String(result.left)}px`;
-      contentRef.current.style.top = `${String(result.top)}px`;
-      contentRef.current.style.opacity = '1';
+      if (!open) return;
+      const anchor = anchorRef.current;
+      const content = contentRef.current;
+      if (!anchor || !content) return;
+
+      let raf = 0;
+      let shown = false;
+      const position = () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          const result = computePosition(
+            anchor.getBoundingClientRect(),
+            { width: content.offsetWidth, height: content.offsetHeight },
+            placement,
+            { gutter },
+          );
+          content.style.left = `${String(result.left)}px`;
+          content.style.top = `${String(result.top)}px`;
+          // показываем только после первой простановки координат — иначе виден
+          // кадр с меню в (0,0) до позиционирования.
+          if (!shown) {
+            content.style.opacity = '1';
+            shown = true;
+          }
+        });
+      };
+
+      position();
+
+      // Держим меню строго под триггером при скролле и ресайзе. Scroll слушаем на
+      // capture-фазе: событие не всплывает, capture ловит скролл в любом предке
+      // (включая вложенные scroll-контейнеры), а не только в window.
+      window.addEventListener('resize', position);
+      window.addEventListener('scroll', position, true);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        window.removeEventListener('resize', position);
+        window.removeEventListener('scroll', position, true);
+      };
     }, [open, placement, gutter]);
 
     const handleKeyDown = useCallback(

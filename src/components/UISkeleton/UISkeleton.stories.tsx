@@ -8,6 +8,12 @@ const meta = {
   argTypes: {
     className: { control: 'text' },
   },
+  // UISkeleton не имеет дефолтной ширины — это гибкий атом, ширина задаётся
+  // потребителем (обычно в % от родительского контейнера). В centered-режиме
+  // Storybook монтирует стори в flex-обёртке без явной ширины, поэтому
+  // процентные размеры (w-3/4, w-full) схлопываются в 0px и блоки не видны.
+  // Даём обёртке конкретную ширину — как реальный контейнер-потребитель.
+  decorators: [(Story) => <div className="w-80"><Story /></div>],
 } satisfies Meta<typeof UISkeleton>;
 
 export default meta;

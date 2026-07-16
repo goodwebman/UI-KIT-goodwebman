@@ -156,22 +156,10 @@ function UIRailInner<T>(
     };
   }, [scroller, sync]);
 
-  // вертикальное колесо мыши → горизонтальный скролл (трекпад с deltaX не трогаем)
-  useEffect(() => {
-    if (!scroller) return;
-    const onWheel = (e: WheelEvent): void => {
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      if (e.deltaY === 0) return;
-      const max = scroller.scrollWidth - scroller.clientWidth;
-      const atBoundary =
-        (e.deltaY < 0 && scroller.scrollLeft <= 0) || (e.deltaY > 0 && scroller.scrollLeft >= max);
-      if (atBoundary) return;
-      e.preventDefault();
-      scroller.scrollLeft += e.deltaY;
-    };
-    scroller.addEventListener('wheel', onWheel, { passive: false });
-    return () => { scroller.removeEventListener('wheel', onWheel); };
-  }, [scroller]);
+  // Колесо мыши НЕ перехватываем: вертикальное колесо уходит странице (рельс не
+  // должен «угонять» скролл), горизонтальный свайп трекпадом (deltaX) листает рельс
+  // через нативный горизонтальный скролл Virtuoso. Раньше deltaY принудительно
+  // превращался в горизонталь — это ломало прокрутку страницы над/под рельсом.
 
   const handleScrollerRef = useCallback((el: HTMLElement | Window | null) => {
     setScroller(el instanceof HTMLElement ? el : null);
