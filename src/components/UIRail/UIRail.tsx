@@ -167,6 +167,60 @@ function UIRailInner<T>(
   // через нативный горизонтальный скролл Virtuoso. Раньше deltaY принудительно
   // превращался в горизонталь — это ломало прокрутку страницы над/под рельсом.
 
+  // Drag-to-scroll мышью. Тач и трекпад листают нативным горизонтальным скроллом,
+  // а мыши без этого оставались только стрелки. Слушаем move/up на window, чтобы
+  // не терять драг, когда курсор ушёл за пределы рельса.
+  useEffect(() => {
+    if (!scroller) return;
+    let startX = 0;
+    let startLeft = 0;
+    let dragging = false;
+    let moved = false;
+
+    const onPointerDown = (e: PointerEvent): void => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      dragging = true;
+      moved = false;
+      startX = e.clientX;
+      startLeft = scroller.scrollLeft;
+    };
+    const onPointerMove = (e: PointerEvent): void => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      // порог в 3px: без него обычный клик по карточке считался бы перетаскиванием
+      if (Math.abs(dx) > 3) {
+        moved = true;
+        scroller.style.userSelect = 'none';
+      }
+      scroller.scrollLeft = startLeft - dx;
+    };
+    const onPointerUp = (): void => {
+      if (!dragging) return;
+      dragging = false;
+      scroller.style.removeProperty('user-select');
+    };
+    // клик по ссылке/кнопке внутри карточки после реального драга гасим на capture-фазе
+    const onClickCapture = (e: MouseEvent): void => {
+      if (moved) {
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }
+    };
+
+    scroller.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    scroller.addEventListener('click', onClickCapture, true);
+    return () => {
+      scroller.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      scroller.removeEventListener('click', onClickCapture, true);
+      scroller.style.removeProperty('user-select');
+    };
+  }, [scroller]);
+
   const handleScrollerRef = useCallback((el: HTMLElement | Window | null) => {
     setScroller(el instanceof HTMLElement ? el : null);
   }, []);
@@ -279,8 +333,11 @@ function UIRailInner<T>(
           endReached={onEndReached ? () => { void onEndReached(); } : undefined}
           increaseViewportBy={endReachedThreshold}
           style={{ height: scrollerHeight }}
-          // скрываем нативные скроллбары обеих осей; вертикаль не нужна
-          className={cn('overflow-y-hidden', '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden')}
+          // скрываем нативные скроллбары обеих осей + grab-курсор для drag мышью
+          className={cn(
+            'cursor-grab overflow-y-hidden active:cursor-grabbing',
+            '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          )}
         />
 
         {showArrows && total > 1 && (

@@ -19,6 +19,12 @@ export interface IUIVirtualGridProps<T> {
   readonly getItemKey?: (item: T, index: number) => string | number;
   /** Классы для CSS-grid контейнера (колонки задаются здесь). Default: `grid-cols-3 gap-3 p-3`. */
   readonly gridClassName?: string;
+  /**
+   * Вертикальный отступ внутри сетки, px. Задаётся отдельно от `gridClassName`:
+   * Virtuoso пишет спискy свой инлайн `padding-top/bottom` под окно виртуализации и
+   * затирает вертикальные классы, поэтому из `p-*` работают только боковые. Default: `12`.
+   */
+  readonly verticalPadding?: number;
   /** Высота скролл-контейнера. Default: `500px`. */
   readonly height?: number | string;
   readonly empty?: ReactNode;
@@ -49,6 +55,7 @@ function UIVirtualGridInner<T>(
     renderItem,
     getItemKey,
     gridClassName = 'grid-cols-3 gap-3 p-3',
+    verticalPadding = 12,
     height = 500,
     empty,
     onEndReached,
@@ -87,6 +94,30 @@ function UIVirtualGridInner<T>(
     [],
   );
 
+  // Спейсеры вместо padding: они часть скроллируемого контента, поэтому переживают
+  // инлайн-стили Virtuoso. Ссылки стабильны — иначе библиотека ремаунтит шапку/подвал.
+  const Spacer = useMemo(
+    () =>
+      verticalPadding > 0
+        ? () => <div style={{ height: `${String(verticalPadding)}px` }} aria-hidden />
+        : undefined,
+    [verticalPadding],
+  );
+
+  const Footer = useMemo(() => {
+    if (!hasMore) return Spacer;
+    return () => (
+      <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+        {loader ?? (
+          <>
+            <UIIcons.Spinner className="size-4 animate-spin" />
+            <span>Загрузка…</span>
+          </>
+        )}
+      </div>
+    );
+  }, [hasMore, loader, Spacer]);
+
   if (items.length === 0 && !hasMore) {
     return (
       <div
@@ -117,20 +148,7 @@ function UIVirtualGridInner<T>(
         increaseViewportBy={endReachedThreshold}
         style={{ height: '100%' }}
         listClassName={cn('grid', gridClassName)}
-        components={{
-          Footer: hasMore
-            ? () => (
-                <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
-                  {loader ?? (
-                    <>
-                      <UIIcons.Spinner className="size-4 animate-spin" />
-                      <span>Загрузка…</span>
-                    </>
-                  )}
-                </div>
-              )
-            : undefined,
-        }}
+        components={{ Header: Spacer, Footer }}
       />
     </div>
   );

@@ -25,6 +25,11 @@ export interface IUICarouselProps<T> {
   readonly gap?: number;
   /** Высота карусели. Default: `220`. */
   readonly height?: number | string;
+  /**
+   * Вертикальный запас вокруг слайдов, px: место под hover-эффекты (подъём, тень) —
+   * лента обрезает всё, что выходит за её высоту. Default: `16`.
+   */
+  readonly hoverGutter?: number;
   /** Показывать стрелки (снаружи, по бокам). Default: `true`. */
   readonly showArrows?: boolean;
   /** Показывать точки-индикаторы. Default: `true`. */
@@ -74,6 +79,7 @@ function UICarouselInner<T>(
     itemWidth = 320,
     gap = 16,
     height = 220,
+    hoverGutter = 16,
     showArrows = true,
     showDots = true,
     loop = false,
@@ -326,11 +332,19 @@ function UICarouselInner<T>(
     [getItemKey],
   );
 
+  // Вертикальный padding на обёртке слайда + такой же прирост высоты ленты: слайд
+  // сохраняет заданную height (box-sizing: border-box), а сверху и снизу появляется
+  // воздух — подъём карточки на hover и её тень больше не срезаются overflow'ом.
   const itemContent = useCallback(
     (index: number, item: T) => (
       <div
         // h-full: слайд обязан занять всю высоту viewport'а, иначе контент с h-full схлопнется в 0
-        style={{ width: `${String(itemWidth)}px`, marginRight: `${String(gap)}px` }}
+        style={{
+          width: `${String(itemWidth)}px`,
+          marginRight: `${String(gap)}px`,
+          paddingTop: `${String(hoverGutter)}px`,
+          paddingBottom: `${String(hoverGutter)}px`,
+        }}
         className="h-full"
         aria-roledescription="slide"
         aria-label={`${String(index + 1)} из ${String(total)}`}
@@ -338,11 +352,15 @@ function UICarouselInner<T>(
         {renderItem(item, index)}
       </div>
     ),
-    [gap, itemWidth, renderItem, total],
+    [gap, hoverGutter, itemWidth, renderItem, total],
   );
 
   const resolvedStyle = useMemo<CSSProperties>(() => ({ ...style }), [style]);
   const heightValue = typeof height === 'number' ? `${String(height)}px` : height;
+  const viewportHeight =
+    typeof height === 'number'
+      ? `${String(height + hoverGutter * 2)}px`
+      : `calc(${height} + ${String(hoverGutter * 2)}px)`;
 
   // Доступность стрелок — по active-индексу, не по позиционному atEnd: у тесной
   // карусели лента упирается в max (atEnd) ещё на total-2, и блокировка по atEnd
@@ -407,8 +425,9 @@ function UICarouselInner<T>(
       }}
       tabIndex={0}
     >
-      {/* posWrap: НЕ обрезается (стрелки торчат наружу), высота = высоте слайдов → стрелки по центру */}
-      <div className="relative" style={{ height: heightValue }}>
+      {/* posWrap: НЕ обрезается (стрелки торчат наружу), высота = слайд + запас под hover
+          с обеих сторон → стрелки остаются по центру слайда */}
+      <div className="relative" style={{ height: viewportHeight }}>
         {/* clip: только он обрезает ленту, стрелки — вне него, в боковых отступах */}
         <div className="h-full overflow-hidden rounded-xl">
           <Virtuoso
