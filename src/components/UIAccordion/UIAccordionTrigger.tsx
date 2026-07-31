@@ -7,7 +7,7 @@ import type { IUIAccordionTriggerProps } from './accordion-context';
 const UIAccordionTriggerBase = forwardRef<HTMLButtonElement, IUIAccordionTriggerProps>(
   ({ className, children, ...props }, ref) => {
     const ctx = useAccordionContext();
-    const value = useAccordionItemContext();
+    const { value, triggerId, contentId } = useAccordionItemContext();
     const isOpen = ctx.expanded.includes(value);
 
     const handleClick = useCallback(() => {
@@ -18,12 +18,15 @@ const UIAccordionTriggerBase = forwardRef<HTMLButtonElement, IUIAccordionTrigger
       <button
         ref={ref}
         type="button"
+        id={triggerId}
+        aria-controls={contentId}
         data-state={isOpen ? 'open' : 'closed'}
         data-name="UIAccordionTrigger"
         onClick={handleClick}
         className={cn(
-          'flex w-full items-center justify-between py-4 text-left text-sm font-medium text-foreground transition-colors',
-          'hover:text-primary focus-visible:text-primary focus-visible:outline-none',
+          'flex w-full cursor-pointer items-center justify-between rounded-sm py-4 text-left text-sm font-medium text-foreground transition-colors',
+          'hover:text-primary focus-visible:text-primary',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           className,
         )}
         aria-expanded={isOpen}

@@ -35,7 +35,10 @@ const UIToastItem = forwardRef<HTMLDivElement, IUIToastItemProps>(
         <button
           type="button"
           onClick={onDismiss}
-          className="shrink-0 opacity-60 hover:opacity-100 focus-visible:outline-none"
+          className={cn(
+            'shrink-0 cursor-pointer rounded-sm opacity-60 transition-opacity hover:opacity-100',
+            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+          )}
           aria-label="Dismiss"
         >
           ✕

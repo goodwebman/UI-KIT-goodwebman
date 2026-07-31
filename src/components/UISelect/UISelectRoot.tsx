@@ -27,10 +27,30 @@ export interface IUISelectProps {
   readonly placement?: Placement;
   readonly gutter?: number;
   readonly disabled?: boolean;
+  /**
+   * A11y-подпись триггера. `role="combobox"` берёт имя только от автора (не из
+   * содержимого), поэтому без неё скринридер объявит контрол безымянным.
+   * Default: значение `placeholder`.
+   */
+  readonly ariaLabel?: string;
 }
 
 const UISelectRoot = forwardRef<HTMLDivElement, IUISelectProps>(
-  ({ testId, className, children, value, onValueChange, placeholder = 'Select...', placement = 'bottom-start', gutter = 4, disabled }, ref) => {
+  (
+    {
+      testId,
+      className,
+      children,
+      value,
+      onValueChange,
+      placeholder = 'Select...',
+      placement = 'bottom-start',
+      gutter = 4,
+      disabled,
+      ariaLabel,
+    },
+    ref,
+  ) => {
     const [open, setOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
     const anchorRef = useRef<HTMLButtonElement>(null);
@@ -107,6 +127,7 @@ const UISelectRoot = forwardRef<HTMLDivElement, IUISelectProps>(
             ref={anchorRef}
             type="button"
             role="combobox"
+            aria-label={ariaLabel ?? placeholder}
             aria-expanded={open}
             aria-haspopup="listbox"
             aria-controls={open ? listboxId : undefined}
@@ -114,7 +135,7 @@ const UISelectRoot = forwardRef<HTMLDivElement, IUISelectProps>(
             data-name="UISelectTrigger"
             onClick={toggle}
             className={cn(
-              'inline-flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background',
+              'inline-flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background',
               'placeholder:text-muted-foreground',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               'disabled:cursor-not-allowed disabled:opacity-50',

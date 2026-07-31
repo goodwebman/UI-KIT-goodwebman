@@ -34,8 +34,14 @@ const UIAccordionRootBase = forwardRef<HTMLDivElement, IUIAccordionProps>(
       [strategy, values, onValueChange],
     );
 
+    // без useMemo новый объект контекста на каждый рендер сбрасывал бы memo у всех item'ов
+    const ctx = useMemo<AccordionContextValue>(
+      () => ({ expanded: values, strategy, toggle }),
+      [values, strategy, toggle],
+    );
+
     return (
-      <AccordionContext.Provider value={{ expanded: values, strategy, toggle }}>
+      <AccordionContext.Provider value={ctx}>
         <div
           ref={ref}
           data-name={testId ? `UIAccordion-${testId}` : 'UIAccordion'}

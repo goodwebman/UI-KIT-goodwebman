@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useContext,
+  useId,
   type ButtonHTMLAttributes,
   type ReactNode,
 } from 'react';
@@ -34,6 +35,7 @@ export const UIRadio = forwardRef<HTMLButtonElement, IUIRadioProps>(
   ({ value, testId, children, className, disabled, ...props }, ref) => {
     const ctx = useContext(RadioContext);
     const checked = ctx?.selected === value;
+    const labelId = useId();
 
     const handleClick = () => {
       if (disabled || ctx == null || checked) {
@@ -43,11 +45,18 @@ export const UIRadio = forwardRef<HTMLButtonElement, IUIRadioProps>(
     };
 
     return (
-      <label className="inline-flex items-center gap-2 cursor-pointer group">
+      <label className="group inline-flex cursor-pointer items-center gap-2">
         <button
           ref={ref}
+          type="button"
           role="radio"
           aria-checked={checked}
+          // <label> не даёт имя кнопке (AccName для button берётся из содержимого),
+          // поэтому подпись связываем явно — иначе скринридер читает «переключатель» без текста
+          aria-labelledby={children != null ? labelId : undefined}
+          // roving tabindex: в таб-порядке только выбранная кнопка, внутри группы — стрелки.
+          // Пока в группе ничего не выбрано, доступны все — иначе группа выпадет из Tab.
+          tabIndex={checked || ctx == null || ctx.selected === '' ? 0 : -1}
           data-state={checked ? 'checked' : 'unchecked'}
           data-name={testId ? `UIRadio-${testId}` : 'UIRadio'}
           name={ctx?.name}
@@ -63,7 +72,9 @@ export const UIRadio = forwardRef<HTMLButtonElement, IUIRadioProps>(
           />
         </button>
         {children != null && (
-          <span className="text-sm font-medium cursor-pointer">{children}</span>
+          <span id={labelId} className="cursor-pointer text-sm font-medium">
+            {children}
+          </span>
         )}
       </label>
     );

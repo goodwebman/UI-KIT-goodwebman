@@ -5,6 +5,8 @@ const meta = {
   component: UICheckbox,
   tags: ['autodocs'],
   title: 'Forms/UICheckbox',
+  // <button role="checkbox"> берёт имя только от автора — без подписи контрол безымянный
+  args: { 'aria-label': 'Согласие с условиями' },
   argTypes: {
     checked: {
       control: 'select',

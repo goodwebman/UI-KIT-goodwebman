@@ -22,19 +22,19 @@ describe('UIStat', () => {
   it('положительная дельта → +N% и зелёный цвет', () => {
     render(<UIStat label="x" value="1" delta={12.5} />);
     const badge = screen.getByText('+12.5%');
-    expect(badge).toHaveClass('text-success');
+    expect(badge).toHaveClass('text-success-emphasis');
   });
 
   it('отрицательная дельта → -N% и красный цвет', () => {
     render(<UIStat label="x" value="1" delta={-3} />);
     const badge = screen.getByText('-3%');
-    expect(badge).toHaveClass('text-destructive');
+    expect(badge).toHaveClass('text-destructive-emphasis');
   });
 
   it('invertDelta инвертирует цвет, но не знак', () => {
     render(<UIStat label="x" value="1" delta={-18} invertDelta />);
     const badge = screen.getByText('-18%');
-    expect(badge).toHaveClass('text-success');
+    expect(badge).toHaveClass('text-success-emphasis');
   });
 
   it('нулевая дельта → нейтральный цвет', () => {

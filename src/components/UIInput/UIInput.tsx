@@ -32,11 +32,13 @@ const UIInputBase = forwardRef<HTMLInputElement, IUIInputProps>(
     ref,
   ) => {
     const isInvalid = error != null && error !== false;
-    const errorId = `err-${testId ?? 'input'}`;
     const hasErrorText = typeof error === 'string' && error.length > 0;
     // useId всегда на верхнем уровне — правило hooks
     const generatedId = useId();
     const inputId = id ?? generatedId;
+    // без testId берём уникальный id: иначе два инпута с ошибкой на странице
+    // делят один id и aria-errormessage указывает на чужое сообщение
+    const errorId = testId != null ? `err-${testId}` : `${generatedId}error`;
 
     return (
       <div className="w-full">

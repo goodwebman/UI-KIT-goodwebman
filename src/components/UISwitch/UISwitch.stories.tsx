@@ -5,6 +5,8 @@ const meta = {
   component: UISwitch,
   tags: ['autodocs'],
   title: 'Forms/UISwitch',
+  // <button role="switch"> берёт имя только от автора — без подписи контрол безымянный
+  args: { 'aria-label': 'Уведомления' },
   argTypes: {
     checked: { control: 'boolean' },
     disabled: { control: 'boolean' },

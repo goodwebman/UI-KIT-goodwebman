@@ -34,10 +34,19 @@ export function useAccordionContext(): AccordionContextValue {
   return ctx;
 }
 
-export const AccordionItemContext = createContext<{ value: string } | null>(null);
+export interface AccordionItemContextValue {
+  /** Значение item'а — по нему считается открытость. */
+  value: string;
+  /** id триггера: контент ссылается на него через aria-labelledby. */
+  triggerId: string;
+  /** id контента: триггер ссылается на него через aria-controls. */
+  contentId: string;
+}
 
-export function useAccordionItemContext(): string {
+export const AccordionItemContext = createContext<AccordionItemContextValue | null>(null);
+
+export function useAccordionItemContext(): AccordionItemContextValue {
   const ctx = useContext(AccordionItemContext);
   if (!ctx) throw new Error('UIAccordion.Trigger/Content must be inside <UIAccordion.Item>');
-  return ctx.value;
+  return ctx;
 }

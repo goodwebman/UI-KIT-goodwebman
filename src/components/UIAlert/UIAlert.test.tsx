@@ -47,7 +47,7 @@ describe('UIAlert', () => {
 
   it('variant:destructive', () => {
     const { container } = render(<UIAlert variant="destructive" />);
-    expect(container.firstChild).toHaveClass('text-destructive');
+    expect(container.firstChild).toHaveClass('text-destructive-emphasis');
   });
 
   it('рендерит children', () => {

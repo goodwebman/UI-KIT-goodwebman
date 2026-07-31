@@ -15,7 +15,7 @@ const UIDialogClose = forwardRef<HTMLButtonElement, IUIDialogCloseProps>(
         data-name="UIDialogClose"
         onClick={onClose}
         className={cn(
-          'absolute right-4 top-4 inline-flex size-6 items-center justify-center rounded-sm text-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'absolute right-4 top-4 inline-flex size-6 cursor-pointer items-center justify-center rounded-sm text-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           className,
         )}
         aria-label="Close"

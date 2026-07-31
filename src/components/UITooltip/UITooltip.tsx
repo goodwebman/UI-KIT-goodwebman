@@ -1,13 +1,18 @@
 import {
+  cloneElement,
   forwardRef,
+  isValidElement,
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
+  type ReactElement,
   type ReactNode,
 } from 'react';
 import { cn } from '../../lib/cn';
 import { Portal } from '../../lib/portal';
+import { useEscape } from '../../lib/use-escape';
 import { useFloatingPosition } from '../../lib/use-floating-position';
 import type { Placement } from '../../lib/position';
 
@@ -38,8 +43,10 @@ const UITooltipRoot = forwardRef<HTMLSpanElement, IUITooltipProps>(
     const [internalOpen, setInternalOpen] = useState(false);
     const anchorRef = useRef<HTMLSpanElement>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const tooltipId = useId();
 
     const open = controlledOpen ?? internalOpen;
+    const visible = open && content != null && content !== false;
 
     const setOpen = useCallback(
       (next: boolean) => {
@@ -67,6 +74,18 @@ const UITooltipRoot = forwardRef<HTMLSpanElement, IUITooltipProps>(
       };
     }, []);
 
+    // Escape закрывает подсказку — требование WAI-ARIA Tooltip Pattern
+    useEscape(hide, visible);
+
+    // Описание вешаем на сам триггер: aria-describedby на не-интерактивной обёртке
+    // скринридер при фокусе кнопки не озвучит. Ссылаемся на id только пока тултип в DOM.
+    const anchoredChildren =
+      visible && isValidElement(children)
+        ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, {
+            'aria-describedby': tooltipId,
+          })
+        : children;
+
     return (
       <span
         ref={anchorRef}
@@ -77,8 +96,16 @@ const UITooltipRoot = forwardRef<HTMLSpanElement, IUITooltipProps>(
         onFocus={show}
         onBlur={hide}
       >
-        {children}
-        {open && content && <TooltipPortal content={content} anchorRef={anchorRef} placement={placement} gutter={gutter} />}
+        {anchoredChildren}
+        {visible && (
+          <TooltipPortal
+            id={tooltipId}
+            content={content}
+            anchorRef={anchorRef}
+            placement={placement}
+            gutter={gutter}
+          />
+        )}
       </span>
     );
   },
@@ -92,9 +119,11 @@ interface TooltipPortalProps {
   anchorRef: React.RefObject<HTMLElement | null>;
   placement: Placement;
   gutter: number;
+  /** id, на который ссылается aria-describedby триггера. */
+  id?: string;
 }
 
-function TooltipPortal({ content, anchorRef, placement, gutter }: TooltipPortalProps) {
+function TooltipPortal({ content, anchorRef, placement, gutter, id }: TooltipPortalProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const style = useFloatingPosition({ anchorRef, floatingRef: contentRef, open: true, placement, gutter });
 
@@ -102,6 +131,7 @@ function TooltipPortal({ content, anchorRef, placement, gutter }: TooltipPortalP
     <Portal>
       <div
         ref={contentRef}
+        id={id}
         role="tooltip"
         data-name="UITooltipContent"
         className={cn(

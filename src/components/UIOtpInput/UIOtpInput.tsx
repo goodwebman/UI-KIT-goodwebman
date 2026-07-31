@@ -1,4 +1,4 @@
-import { forwardRef, memo, useCallback, useMemo, useRef, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { forwardRef, memo, useCallback, useId, useMemo, useRef, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { cn } from '../../lib/cn';
 
 export interface IUIOtpInputProps {
@@ -63,8 +63,10 @@ const UIOtpInputBase = forwardRef<HTMLDivElement, IUIOtpInputProps>(
     }, [value, length]);
 
     const isInvalid = error != null && error !== false;
-    const errorId = `err-${testId ?? 'otp'}`;
     const hasErrorText = typeof error === 'string' && error.length > 0;
+    // см. UIInput: без testId нужен уникальный id, иначе сообщения об ошибке пересекаются
+    const generatedId = useId();
+    const errorId = testId != null ? `err-${testId}` : `${generatedId}error`;
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const emit = useCallback(
@@ -173,6 +175,7 @@ const UIOtpInputBase = forwardRef<HTMLDivElement, IUIOtpInputProps>(
               /* eslint-disable-next-line jsx-a11y/no-autofocus */
               autoFocus={autoFocus && i === 0}
               aria-invalid={isInvalid || undefined}
+              aria-errormessage={hasErrorText ? errorId : undefined}
               aria-label={`Символ ${String(i + 1)} из ${String(length)}`}
               onChange={(e) => { handleChange(i, e.target.value); }}
               onKeyDown={(e) => { handleKeyDown(i, e); }}

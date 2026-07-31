@@ -5,6 +5,8 @@ export type IUITabsListProps = HTMLAttributes<HTMLDivElement>;
 
 const UITabsList = forwardRef<HTMLDivElement, IUITabsListProps>(
   ({ className, ...props }, ref) => (
+    // клавиатурная навигация живёт на самих вкладках (UITabsTab): tablist по WAI-ARIA
+    // не участвует в таб-порядке, вешать обработчик на нефокусируемый контейнер нельзя
     <div
       ref={ref}
       role="tablist"

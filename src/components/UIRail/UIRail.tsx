@@ -25,6 +25,11 @@ export interface IUIRailProps<T> {
   readonly gap?: number;
   /** Высота ряда. Горизонтальной виртуализации нужна фиксированная высота. Default: `280`. */
   readonly height?: number | string;
+  /**
+   * Вертикальный запас вокруг карточек, px: место под hover-эффекты (подъём, тень) —
+   * скроллер режет всё, что выходит за его высоту. Default: `16`.
+   */
+  readonly hoverGutter?: number;
   /** Заголовок слева в шапке. */
   readonly title?: ReactNode;
   /** Узел справа в шапке (например ссылка «Показать все»). */
@@ -75,6 +80,7 @@ function UIRailInner<T>(
     itemWidth = 280,
     gap = 16,
     height = 280,
+    hoverGutter = 16,
     title,
     action,
     showArrows = true,
@@ -170,16 +176,31 @@ function UIRailInner<T>(
     [getItemKey],
   );
 
+  // Вертикальный padding живёт на обёртке слайда, а высота скроллера растёт на те же
+  // 2×gutter — карточка сохраняет заданную height (box-sizing: border-box), а сверху и
+  // снизу появляется воздух: подъём на hover и тень больше не срезаются overflow'ом.
   const itemContent = useCallback(
     (index: number, item: T) => (
-      <div style={{ width: `${String(itemWidth)}px`, marginRight: `${String(gap)}px` }} className="h-full">
+      <div
+        style={{
+          width: `${String(itemWidth)}px`,
+          marginRight: `${String(gap)}px`,
+          paddingTop: `${String(hoverGutter)}px`,
+          paddingBottom: `${String(hoverGutter)}px`,
+        }}
+        className="h-full"
+      >
         {renderItem(item, index)}
       </div>
     ),
-    [gap, itemWidth, renderItem],
+    [gap, hoverGutter, itemWidth, renderItem],
   );
 
   const heightValue = typeof height === 'number' ? `${String(height)}px` : height;
+  const scrollerHeight =
+    typeof height === 'number'
+      ? `${String(height + hoverGutter * 2)}px`
+      : `calc(${height} + ${String(hoverGutter * 2)}px)`;
   const resolvedAriaLabel = ariaLabel ?? (typeof title === 'string' ? title : 'Лента');
 
   if (total === 0) {
@@ -198,7 +219,7 @@ function UIRailInner<T>(
   }
 
   const arrowBase = cn(
-    'absolute top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full',
+    'absolute top-1/2 z-20 flex size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full',
     'border border-border bg-card/90 text-foreground shadow-lg backdrop-blur transition-all duration-200',
     'hover:scale-110 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     'disabled:pointer-events-none disabled:opacity-0',
@@ -257,7 +278,7 @@ function UIRailInner<T>(
           itemContent={itemContent}
           endReached={onEndReached ? () => { void onEndReached(); } : undefined}
           increaseViewportBy={endReachedThreshold}
-          style={{ height: heightValue }}
+          style={{ height: scrollerHeight }}
           // скрываем нативные скроллбары обеих осей; вертикаль не нужна
           className={cn('overflow-y-hidden', '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden')}
         />

@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, type HTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useId, useMemo, type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 import TabsContext from './tabs-context';
 
@@ -11,7 +11,11 @@ export interface IUITabsProps extends HTMLAttributes<HTMLDivElement> {
 
 const UITabsRoot = forwardRef<HTMLDivElement, IUITabsProps>(
   ({ className, testId, value, onValueChange, children, ...props }, ref) => {
-    const ctx = useMemo(() => ({ activeTab: value, onTabChange: onValueChange }), [value, onValueChange]);
+    const baseId = useId();
+    const ctx = useMemo(
+      () => ({ activeTab: value, onTabChange: onValueChange, baseId }),
+      [value, onValueChange, baseId],
+    );
 
     return (
       <TabsContext.Provider value={ctx}>

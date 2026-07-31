@@ -66,9 +66,12 @@ const UISearchInputBase = forwardRef<HTMLInputElement, IUISearchInputProps>(
       <button
         type="button"
         aria-label="Очистить"
-        tabIndex={-1}
         onClick={handleClear}
-        className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className={cn(
+          'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors',
+          'hover:bg-muted hover:text-foreground',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        )}
       >
         {ClearIcon}
       </button>

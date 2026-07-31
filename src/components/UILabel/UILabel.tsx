@@ -13,12 +13,13 @@ export interface IUILabelProps
 }
 
 const UILabelBase = forwardRef<HTMLLabelElement, IUILabelProps>(
-  ({ className, testId, ...props }, ref) => (
-    // eslint-disable-next-line jsx-a11y/label-has-associated-control
+  ({ className, testId, htmlFor, ...props }, ref) => (
     <label
       ref={ref}
+      htmlFor={htmlFor}
       data-name={testId ? `UILabel-${testId}` : 'UILabel'}
-      className={cn(labelVariants(), className)}
+      // курсор только у связанного label — он реально кликабелен (фокусирует контрол)
+      className={cn(labelVariants(), htmlFor != null && 'cursor-pointer', className)}
       {...props}
     />
   ),

@@ -19,7 +19,8 @@ interface Row {
   color: string;
 }
 
-const PALETTE = ['#f97316', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#eab308'];
+// 600–700 оттенки: белые инициалы поверх дают ≥4.6:1 (WCAG AA), светлые 500-е не давали
+const PALETTE = ['#c2410c', '#15803d', '#2563eb', '#9333ea', '#be185d', '#a16207'];
 const ROLES = ['Frontend', 'Backend', 'Design', 'QA', 'PM', 'DevOps'];
 
 function makeRows(from: number, count: number): Row[] {

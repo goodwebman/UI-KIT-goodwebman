@@ -7,6 +7,8 @@ export interface IUIProgressProps extends HTMLAttributes<HTMLDivElement> {
   readonly value?: number | null;
   /** Максимальное значение (по умолч. 100) */
   readonly max?: number;
+  /** A11y-подпись: `role="progressbar"` без имени скринридер объявляет пустым. Default: `'Прогресс'`. */
+  readonly ariaLabel?: string;
 }
 
 /**
@@ -15,7 +17,7 @@ export interface IUIProgressProps extends HTMLAttributes<HTMLDivElement> {
  * Indeterminate (`value == null`) — бегущая полоса + `aria-busy`.
  */
 const UIProgressBase = forwardRef<HTMLDivElement, IUIProgressProps>(
-  ({ className, testId, value, max = 100, ...props }, ref) => {
+  ({ className, testId, value, max = 100, ariaLabel = 'Прогресс', ...props }, ref) => {
     const isIndeterminate = value == null;
     const pct = Math.min(100, Math.max(0, ((value ?? 0) / max) * 100));
     const offset = 100 - pct;
@@ -24,6 +26,8 @@ const UIProgressBase = forwardRef<HTMLDivElement, IUIProgressProps>(
       <div
         ref={ref}
         role="progressbar"
+        // имя перебивается через aria-label/aria-labelledby в props
+        aria-label={ariaLabel}
         aria-valuenow={isIndeterminate ? undefined : value}
         aria-valuemin={0}
         aria-valuemax={max}

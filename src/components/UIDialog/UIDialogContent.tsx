@@ -13,7 +13,7 @@ export interface IUIDialogContentProps extends HTMLAttributes<HTMLDivElement> {
 
 const UIDialogContent = forwardRef<HTMLDivElement, IUIDialogContentProps>(
   ({ className, persistent = false, children, ...props }, _ref) => {
-    const { onClose } = useDialogContext();
+    const { onClose, labelledBy, describedBy } = useDialogContext();
     const panelRef = useRef<HTMLDivElement>(null);
 
     useEscape(onClose);
@@ -43,6 +43,10 @@ const UIDialogContent = forwardRef<HTMLDivElement, IUIDialogContentProps>(
             ref={panelRef}
             role="dialog"
             aria-modal="true"
+            // Имя диалога — из UIDialog.Title; если его нет, потребитель обязан
+            // передать aria-label сам (props идут ниже и перебивают эти значения).
+            aria-labelledby={labelledBy ?? undefined}
+            aria-describedby={describedBy ?? undefined}
             data-name="UIDialogPanel"
             className={cn(
               'relative w-full max-w-lg rounded-lg border border-border bg-background p-6 shadow-lg',

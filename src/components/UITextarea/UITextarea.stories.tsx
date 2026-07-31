@@ -20,15 +20,15 @@ export const Default: Story = {
 };
 
 export const Error: Story = {
-  args: { error: 'Обязательное поле' },
+  args: { error: 'Обязательное поле', 'aria-label': 'Описание' },
 };
 
 export const Disabled: Story = {
-  args: { disabled: true, value: 'Неактивно' },
+  args: { disabled: true, value: 'Неактивно', 'aria-label': 'Описание' },
 };
 
 export const WithValue: Story = {
-  args: { defaultValue: 'Long text content\nwith multiple lines', rows: 5 },
+  args: { defaultValue: 'Long text content\nwith multiple lines', rows: 5, 'aria-label': 'Описание' },
 };
 
 export const WithCounter: Story = {

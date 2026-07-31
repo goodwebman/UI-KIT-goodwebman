@@ -33,6 +33,10 @@ export interface IUIPopoverProps {
   readonly gutter?: number;
   /** Класс для контент-панели. */
   readonly className?: string;
+  /** A11y-имя панели: `role="dialog"` без имени скринридер объявляет пустым. Default: `'Всплывающее окно'`. */
+  readonly ariaLabel?: string;
+  /** Альтернатива `ariaLabel`: id заголовка внутри панели. Приоритетнее `ariaLabel`. */
+  readonly ariaLabelledBy?: string;
 }
 
 interface TriggerProps {
@@ -42,7 +46,18 @@ interface TriggerProps {
 
 const UIPopoverRoot = forwardRef<HTMLDivElement, IUIPopoverProps>(
   (
-    { testId, trigger, children, open: controlledOpen, onOpenChange, placement = 'bottom-start', gutter = 8, className },
+    {
+      testId,
+      trigger,
+      children,
+      open: controlledOpen,
+      onOpenChange,
+      placement = 'bottom-start',
+      gutter = 8,
+      className,
+      ariaLabel = 'Всплывающее окно',
+      ariaLabelledBy,
+    },
     ref,
   ) => {
     const [internalOpen, setInternalOpen] = useState(false);
@@ -98,6 +113,8 @@ const UIPopoverRoot = forwardRef<HTMLDivElement, IUIPopoverProps>(
               ref={contentRef}
               id={contentId}
               role="dialog"
+              aria-label={ariaLabelledBy == null ? ariaLabel : undefined}
+              aria-labelledby={ariaLabelledBy}
               data-name="UIPopoverContent"
               data-state="open"
               className={cn(

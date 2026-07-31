@@ -24,10 +24,11 @@ const textareaBase = [
 const UITextareaBase = forwardRef<HTMLTextAreaElement, IUITextareaProps>(
   ({ className, testId, error, onChange, disabled, id, maxLength, value, defaultValue, ...props }, ref) => {
     const isInvalid = error != null && error !== false;
-    const errorId = `err-${testId ?? 'textarea'}`;
     const hasErrorText = typeof error === 'string' && error.length > 0;
     const generatedId = useId();
     const inputId = id ?? generatedId;
+    // см. UIInput: без testId нужен уникальный id, иначе сообщения об ошибке пересекаются
+    const errorId = testId != null ? `err-${testId}` : `${generatedId}error`;
 
     // Длина для счётчика: controlled — из value, иначе — внутренний state, обновляемый в handler (без эффекта)
     const [internalLen, setInternalLen] = useState(() => {

@@ -14,7 +14,7 @@ export const alertVariants = cva(
         warning:
           'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800',
         destructive:
-          'bg-destructive/10 text-destructive border-destructive/20',
+          'bg-destructive/10 text-destructive-emphasis border-destructive/20',
       },
     },
     defaultVariants: { variant: 'default' },

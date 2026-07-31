@@ -1,6 +1,7 @@
 import {
   forwardRef,
   memo,
+  useId,
   useMemo,
   useState,
   type HTMLAttributes,
@@ -77,7 +78,9 @@ const UIPhoneInputRootBase = forwardRef<HTMLDivElement, IUIPhoneInputProps>(
     const invalid = externalHasError || showMaskError;
 
     const errorText = externalErrorText ?? (showMaskError ? maskErrorText : null);
-    const errorId = `err-${testId ?? 'phone'}`;
+    // см. UIInput: без testId нужен уникальный id, иначе сообщения об ошибке пересекаются
+    const generatedId = useId();
+    const errorId = testId != null ? `err-${testId}` : `${generatedId}error`;
     const hasErrorText = errorText !== null;
 
     const setDial = (d: string): void => {

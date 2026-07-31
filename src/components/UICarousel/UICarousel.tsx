@@ -366,7 +366,7 @@ function UICarouselInner<T>(
   }
 
   const arrowBase = cn(
-    'absolute top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full',
+    'absolute top-1/2 z-10 flex size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full',
     'border border-border bg-card text-foreground shadow-lg transition-all',
     'hover:scale-110 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     'disabled:pointer-events-none disabled:opacity-30',
@@ -465,7 +465,8 @@ function UICarouselInner<T>(
                 goTo(i);
               }}
               className={cn(
-                'h-1.5 rounded-full transition-all',
+                'h-1.5 cursor-pointer rounded-full transition-all',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 i === activeIndex
                   ? 'w-6 bg-primary'
                   : 'w-1.5 bg-muted hover:bg-muted-foreground/40',

@@ -69,8 +69,9 @@ const UIStatBase = forwardRef<HTMLDivElement, IUIStatProps>(
             <span
               className={cn(
                 'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
-                positive && 'bg-success/10 text-success',
-                negative && 'bg-destructive/10 text-destructive',
+                // emphasis-варианты: базовый статус-цвет на своей /10-подложке не добирает AA
+                positive && 'bg-success/10 text-success-emphasis',
+                negative && 'bg-destructive/10 text-destructive-emphasis',
                 !positive && !negative && 'bg-muted text-muted-foreground',
               )}
             >

@@ -53,11 +53,12 @@ const UIPhoneInputCountryBase = forwardRef<HTMLButtonElement, { readonly classNa
           disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={open}
-          aria-controls={listboxId}
+          // ссылка только пока список в DOM — иначе aria-controls указывает в пустоту
+          aria-controls={open ? listboxId : undefined}
           data-invalid={invalid || undefined}
           onClick={() => { setOpen((o) => !o); }}
           className={cn(
-            'flex h-10 items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-sm shadow-sm transition-[border-color,box-shadow]',
+            'flex h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-sm shadow-sm transition-[border-color,box-shadow]',
             'hover:border-ring/50 focus-visible:border-ring focus-visible:ring-ring/40 focus-visible:ring-[3px] focus-visible:outline-none',
             'data-[invalid=true]:border-destructive data-[invalid=true]:ring-destructive/30 data-[invalid=true]:focus-visible:ring-destructive/40',
             'disabled:cursor-not-allowed disabled:opacity-50',
@@ -72,39 +73,40 @@ const UIPhoneInputCountryBase = forwardRef<HTMLButtonElement, { readonly classNa
         </button>
 
         {open && (
-          <div
-            id={listboxId}
-            role="listbox"
-            className="absolute left-0 z-50 mt-2 w-60 overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-lg"
-          >
+          <div className="absolute left-0 z-50 mt-2 w-60 overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-lg">
+            {/* поле поиска — вне listbox: тот допускает только option/group в потомках */}
             <input
               autoFocus
+              type="search"
               value={query}
+              aria-label="Поиск страны"
               onChange={(e) => { setQuery(e.target.value); }}
               placeholder="Поиск страны…"
               className="mb-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
-            <ul className="max-h-56 overflow-y-auto">
-              {filtered.length === 0 && (
-                <li className="px-2 py-3 text-center text-sm text-muted-foreground">Не найдено</li>
-              )}
+            {filtered.length === 0 && (
+              <p className="px-2 py-3 text-center text-sm text-muted-foreground">Не найдено</p>
+            )}
+            <div id={listboxId} role="listbox" aria-label="Код страны" className="max-h-56 overflow-y-auto">
               {filtered.map((c) => (
-                <li key={`${c.code}-${c.dial}`} role="option" aria-selected={c.dial === dial}>
-                  <button
-                    type="button"
-                    onClick={() => { choose(c.dial); }}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
-                      c.dial === dial ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
-                    )}
-                  >
-                    <span className="text-base leading-none">{c.flag}</span>
-                    <span className="flex-1 truncate">{c.name}</span>
-                    <span className="tabular-nums text-muted-foreground">{c.dial}</span>
-                  </button>
-                </li>
+                <button
+                  key={`${c.code}-${c.dial}`}
+                  type="button"
+                  role="option"
+                  aria-selected={c.dial === dial}
+                  onClick={() => { choose(c.dial); }}
+                  className={cn(
+                    'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    c.dial === dial ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
+                  )}
+                >
+                  <span className="text-base leading-none">{c.flag}</span>
+                  <span className="flex-1 truncate">{c.name}</span>
+                  <span className="tabular-nums text-muted-foreground">{c.dial}</span>
+                </button>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </div>

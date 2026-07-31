@@ -66,11 +66,12 @@ describe('UIPhoneInput', () => {
     const onChange = vi.fn();
     render(<UIPhoneInput value={{ dial: '+7', number: '' }} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button'));
-    // выбираем США (+1) по названию — не завязываемся на порядок в списке
+    // выбираем США (+1) по названию — не завязываемся на порядок в списке.
+    // option — сама кнопка: listbox не может владеть интерактивными потомками
     const usOption = screen
       .getAllByRole('option')
-      .find((li) => li.textContent!.includes('США'));
-    fireEvent.click(usOption!.querySelector('button')!);
+      .find((option) => option.textContent!.includes('США'));
+    fireEvent.click(usOption!);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ dial: '+1' }));
   });
 

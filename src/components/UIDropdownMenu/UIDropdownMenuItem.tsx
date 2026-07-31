@@ -17,6 +17,8 @@ const UIDropdownMenuItem = forwardRef<HTMLDivElement, IUIDropdownMenuItemProps>(
         tabIndex={-1}
         data-name="UIDropdownMenuItem"
         aria-disabled={disabled || undefined}
+        // атрибут нужен самому классу data-disabled:* — без него правило не срабатывало
+        data-disabled={disabled || undefined}
         className={cn(
           'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
           'focus-visible:bg-accent focus-visible:text-accent-foreground',

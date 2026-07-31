@@ -29,11 +29,11 @@ export const Error: Story = {
 };
 
 export const Disabled: Story = {
-  args: { disabled: true, value: 'Недоступно' },
+  args: { disabled: true, value: 'Недоступно', 'aria-label': 'Недоступное поле' },
 };
 
 export const File: Story = {
-  args: { type: 'file', className: 'cursor-pointer' },
+  args: { type: 'file', className: 'cursor-pointer', 'aria-label': 'Файл' },
 };
 
 const SearchIcon = <UIIcons.Search className="size-4" />;

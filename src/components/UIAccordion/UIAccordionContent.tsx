@@ -6,7 +6,7 @@ import type { IUIAccordionContentProps } from './accordion-context';
 const UIAccordionContentBase = forwardRef<HTMLDivElement, IUIAccordionContentProps>(
   ({ className, children, ...props }, ref) => {
     const { expanded } = useAccordionContext();
-    const value = useAccordionItemContext();
+    const { value, triggerId, contentId } = useAccordionItemContext();
     const isOpen = expanded.includes(value);
 
     // Контент всегда в DOM; высота анимируется через grid-template-rows 0fr → 1fr.
@@ -21,8 +21,17 @@ const UIAccordionContentBase = forwardRef<HTMLDivElement, IUIAccordionContentPro
           'data-[state=open]:grid-rows-[1fr]',
         )}
       >
-        <div className="overflow-hidden data-[state=closed]:pointer-events-none">
-          <div role="region" className={cn('pb-4 text-sm text-muted-foreground', className)} {...props}>
+        {/* inert на закрытом: контент остаётся в DOM ради анимации схлопывания, но
+            выпадает из таб-порядка и из дерева доступности — иначе Tab уводит фокус
+            в невидимые ссылки, а скринридер зачитывает скрытый текст. */}
+        <div className="overflow-hidden" inert={!isOpen}>
+          <div
+            id={contentId}
+            role="region"
+            aria-labelledby={triggerId}
+            className={cn('pb-4 text-sm text-muted-foreground', className)}
+            {...props}
+          >
             {children}
           </div>
         </div>

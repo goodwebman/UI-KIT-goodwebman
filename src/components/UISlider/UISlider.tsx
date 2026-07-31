@@ -14,6 +14,8 @@ export interface IUISliderProps
   readonly min?: number;
   readonly max?: number;
   readonly step?: number;
+  /** A11y-подпись: range без label остаётся безымянным для скринридера. Default: `'Ползунок'`. */
+  readonly ariaLabel?: string;
 }
 
 /**
@@ -31,6 +33,7 @@ const UISliderBase = forwardRef<HTMLInputElement, IUISliderProps>(
       max = 100,
       step = 1,
       disabled,
+      ariaLabel = 'Ползунок',
       ...props
     },
     ref,
@@ -56,6 +59,8 @@ const UISliderBase = forwardRef<HTMLInputElement, IUISliderProps>(
         step={step}
         disabled={disabled}
         onChange={handleChange}
+        // имя перебивается через aria-label/aria-labelledby в props
+        aria-label={ariaLabel}
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={value ?? 0}
